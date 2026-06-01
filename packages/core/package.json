@@ -1,0 +1,67 @@
+{
+  "name": "@rsp/core",
+  "version": "0.1.0",
+  "description": "Respectful Synchronised Protocol — core pipeline",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./tracker": {
+      "import": "./dist/tracker/index.js",
+      "types": "./dist/tracker/index.d.ts"
+    },
+    "./consent": {
+      "import": "./dist/consent/index.js",
+      "types": "./dist/consent/index.d.ts"
+    },
+    "./weights": {
+      "import": "./dist/weights/index.js",
+      "types": "./dist/weights/index.d.ts"
+    },
+    "./translator": {
+      "import": "./dist/translator/index.js",
+      "types": "./dist/translator/index.d.ts"
+    },
+    "./aggregator": {
+      "import": "./dist/aggregator/index.js",
+      "types": "./dist/aggregator/index.d.ts"
+    },
+    "./burn": {
+      "import": "./dist/burn/index.js",
+      "types": "./dist/burn/index.d.ts"
+    },
+    "./audit": {
+      "import": "./dist/audit/index.js",
+      "types": "./dist/audit/index.d.ts"
+    },
+    "./visualizer": {
+      "import": "./dist/visualizer/index.js",
+      "types": "./dist/visualizer/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^4.1.7"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jtrader/RSP"
+  }
+}

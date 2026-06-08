@@ -1,5 +1,5 @@
 {
-  "name": "@rsp/react",
+  "name": "@rsp-protocol/react",
   "version": "0.1.0",
   "description": "Respectful Synchronised Protocol — React hooks and components",
   "type": "module",

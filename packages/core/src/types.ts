@@ -154,8 +154,10 @@ export interface RSPBurnReceipt {
 
 // ── Weight Map ────────────────────────────────────────────────────────────────
 
-export type RSPWeightMap = Partial<Record<RSPEventType, number>> & {
-  [key: string]: number
+export type RSPWeightMap = {
+  [K in RSPEventType]?: number
+} & {
+  [key: string]: number | undefined
 }
 
 // ── Pipeline Config ───────────────────────────────────────────────────────────

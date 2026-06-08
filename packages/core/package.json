@@ -1,5 +1,5 @@
 {
-  "name": "@rsp/core",
+  "name": "@rsp-protocol/core",
   "version": "0.1.0",
   "description": "Respectful Synchronised Protocol — core pipeline",
   "type": "module",

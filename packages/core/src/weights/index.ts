@@ -38,7 +38,7 @@ export function getWeight(
   eventType: RSPEventType,
   weights: RSPWeightMap = DEFAULT_WEIGHTS,
 ): number {
-  return weights[eventType] ?? 0
+  return (weights[eventType] as number | undefined) ?? 0
 }
 
 /**

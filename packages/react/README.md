@@ -1,11 +1,13 @@
-# RSP — Respectful Synchronised Protocol
+# `@rsp-protocol/react`
 
-**Synchronisation without coercion.**
+**Respectful Synchronised Protocol — React hooks and components**
 
-Translate behaviour. Synchronise the signal. Burn the identifiable source.
+Drop-in React integration for the RSP privacy-first coordination pipeline.
 
-- Protocol page: [lovekeylink.com/rsp](https://lovekeylink.com/rsp)
-- Genesis NFT: `0xA1755730C6F66dbe3de29e24F4Db9F448ef3FDD5` (Ethereum)
+[![npm](https://img.shields.io/npm/v/@rsp-protocol/react)](https://www.npmjs.com/package/@rsp-protocol/react)
+[![npm peer dependency](https://img.shields.io/npm/dependency-version/@rsp-protocol/react/peer/react)](https://www.npmjs.com/package/@rsp-protocol/react)
+[![GitHub](https://img.shields.io/badge/github-%40rsp-lightgrey)](https://github.com/rsp)
+[![Protocol](https://img.shields.io/badge/protocol-lovekeylink.com%2Frsp-red)](https://lovekeylink.com/rsp)
 
 ---
 
@@ -13,115 +15,48 @@ Translate behaviour. Synchronise the signal. Burn the identifiable source.
 
 RSP is a privacy-first coordination framework for systems that observe behaviour — human, AI, or hybrid — and need to act on it without surveilling, profiling, or coercing the people involved.
 
-RSP defines how to translate raw behavioural events into minimal, low-resolution signals; how to synchronise those signals into a shared coordination state; and how to destroy the identifiable source data once it has served its purpose.
-
----
-
-## The Core Flow
-
-```
-Observe minimum → Check consent → Normalise → Apply weight →
-Aggregate to node signal → Render visual state → Expire → Burn source
-```
-
----
-
-## Packages
-
-| Package | Version | Description |
-|---|---|---|
-| [`@rsp-protocol/core`](./packages/core) | ![npm](https://img.shields.io/npm/v/@rsp/core) | Core pipeline — tracker, consent, weights, translator, aggregator, burn, audit, visualizer |
-| [`@rsp-protocol/react`](./packages/react) | ![npm](https://img.shields.io/npm/v/@rsp/react) | React hooks and components — drop-in integration for React 18+ |
+`@rsp-protocol/react` provides hooks and components that wire the full RSP pipeline into React applications. It wraps [`@rsp-protocol/core`](https://www.npmjs.com/package/@rsp-protocol/core), which is included as a dependency — you do not need to install both.
 
 ---
 
 ## Installation
 
 ```bash
-# Core only (framework-agnostic — Node, browser, AI agents)
-npm install @rsp/core
-
-# React integration (includes @rsp/core as a dependency)
-npm install @rsp/react
+npm install @rsp-protocol/react
+# or
+pnpm add @rsp-protocol/react
+# or
+yarn add @rsp-protocol/react
 ```
+
+**Peer dependencies:** React 18 or 19.
 
 ---
 
-## `@rsp/core` — Quick Example
-
-```typescript
-import {
-  createConsent,
-  hasConsent,
-  translate,
-  aggregate,
-  toNodeSignal,
-  markBurned,
-  generateBurnReceipt,
-  renderSignal,
-} from '@rsp/core'
-
-// 1. Check consent
-const consent = createConsent({
-  id: 'c1',
-  nodeId: 'node-anon-abc123',
-  scope: ['analytics'],
-  durationDays: 30,
-})
-
-if (!hasConsent(consent, 'analytics')) {
-  throw new Error('No consent — cannot process event')
-}
-
-// 2. Translate raw event to normalised RSP event
-const normalisedEvent = translate(
-  { nodeId: 'node-anon-abc123', eventType: 'activeMinute', timestamp: new Date().toISOString() },
-  { nodeType: 'lesson', signalWindowMinutes: 60 }
-)
-// { nodeId: 'node-anon-abc123', weight: 10, sourceStatus: 'normalised', ... }
-
-// 3. Aggregate to node signal
-const entries = aggregate([normalisedEvent])
-const signal = toNodeSignal(entries.get('node-anon-abc123')!)
-// { state: 'aware', intensity: 0.07, trend: 'stable', sourceStatus: 'pending-burn', ... }
-
-// 4. Burn the source
-const entry = entries.get('node-anon-abc123')!
-const receipt = generateBurnReceipt(entry, 'deletion')
-const burnedSignal = markBurned(signal)
-// { ...signal, sourceStatus: 'burned' }
-// receipt → store this; the source records are gone
-
-// 5. Render for UI or agent consumption
-const display = renderSignal(burnedSignal)
-// { state: { label: 'Aware', colour: 'neutral', suggestedAction: '...' }, ... }
-```
-
----
-
-## `@rsp/react` — Quick Example
-
-### `useRSPPipeline` — the primary hook
-
-Wires the full RSP pipeline into a React component in one call: tracker → consent gate → normalisation → aggregation → signal → burn.
+## Quick Start
 
 ```tsx
-import { useRSPPipeline, SignalCard } from '@rsp/react'
-import { createConsent } from '@rsp/core'
+import { useRSPPipeline, SignalCard } from '@rsp-protocol/react'
+import { createConsent } from '@rsp-protocol/core'
 
+// Create a consent record — always required before tracking
 const consent = createConsent({
   id: 'c1',
-  nodeId: 'node-anon-abc123',
+  nodeId: 'node-anon-abc123',  // anonymised — never a real user ID
   scope: ['analytics'],
   durationDays: 30,
 })
 
 function LessonPage() {
-  const { track, signal, display } = useRSPPipeline({
+  const { track, signal, display, receipts } = useRSPPipeline({
     nodeId: 'node-anon-abc123',
     consent,
     nodeType: 'lesson',
     signalWindowMinutes: 60,
+    onBurn: (receipt) => {
+      // persist the receipt to your audit store
+      console.log('Burned:', receipt)
+    },
   })
 
   return (
@@ -131,61 +66,267 @@ function LessonPage() {
     >
       <h1>Lesson content</h1>
 
-      {signal && <SignalCard signal={signal} />}
+      {signal && <SignalCard signal={signal} showAction showIntensity />}
     </div>
   )
 }
 ```
 
-### Hooks
+---
 
-| Hook | Description |
-|---|---|
-| `useRSPPipeline` | Full pipeline in one hook — tracker + signal + burn wired together |
-| `useRSPTracker` | Tracker only — capture events and forward normalised events to your own handler |
-| `useNodeSignal` | Signal only — accumulate normalised events, manage window expiry, emit burn receipts |
+## Hooks
 
-### Components
+### `useRSPPipeline` — primary hook
 
-| Component | Description |
-|---|---|
-| `SignalCard` | Displays a single node signal — state, intensity, trend, suggested action |
-| `SignalGrid` | Renders a collection of `SignalCard`s in a responsive grid |
-| `StateBadge` | Compact inline badge showing a visual state — full label or dot variant |
-| `AttentionAlert` | Surfaces signals requiring immediate attention (`support_needed`, `friction`, `overload`) — renders nothing if none present |
+Wires the full RSP pipeline in a single call: tracker → consent gate → normalisation → aggregation → signal → auto-burn on window expiry.
 
-### `AttentionAlert` — dashboard/operator example
-
-```tsx
-import { AttentionAlert } from '@rsp/react'
-
-// signals is an RSPNodeSignal[] — e.g. from a list of tracked nodes
-function OperatorDashboard({ signals }) {
-  return (
-    <AttentionAlert
-      signals={signals}
-      title="Nodes requiring attention"
-      onDismiss={(nodeId) => console.log('dismissed', nodeId)}
-    />
-  )
-}
-```
-
-### `StateBadge` variants
-
-```tsx
-import { StateBadge } from '@rsp/react'
-
-// Full label
-<StateBadge state="resonant" />          // → "Resonant"
-
-// Dot only (for dense tables or lists)
-<StateBadge state="support_needed" variant="dot" />
+```typescript
+const {
+  track,       // convenience capture methods
+  capture,     // capture any event type by string
+  isTracking,  // boolean — false if consent is invalid or withdrawn
+  signal,      // RSPNodeSignal | null
+  display,     // RSPSignalDisplay | null — rendered for UI
+  push,        // manually push a normalised event
+  reset,       // manually flush the current window
+  receipts,    // RSPBurnReceipt[] — all receipts generated this session
+} = useRSPPipeline({
+  nodeId: string                    // required — anonymised node identifier
+  consent: RSPConsent | null        // required — null disables tracking
+  consentScope?: string             // default: 'analytics'
+  signalWindowMinutes?: number      // default: 60
+  nodeType?: string                 // default: 'element'
+  weights?: RSPWeightMap            // custom weight overrides
+  thresholds?: StateThresholds      // custom state thresholds
+  onBurn?: (receipt) => void        // called when a window burns
+})
 ```
 
 ---
 
-## The Identifiable Source Burn Clause
+### `useRSPTracker` — tracker only
+
+Use when you want to capture events and handle normalised output yourself — e.g. when feeding multiple trackers into a shared signal store.
+
+```typescript
+const { track, capture, isTracking } = useRSPTracker({
+  nodeId: 'node-anon-abc123',
+  consent,
+  consentScope: 'analytics',
+  signalWindowMinutes: 60,
+  nodeType: 'lesson',
+  onEvent: (normalisedEvent) => {
+    // forward to your own signal handler
+    mySignalStore.push(normalisedEvent)
+  },
+})
+
+// Capture events
+track.pageView()
+track.activeMinute()
+track.completionOrConversion()
+capture('customEventType')
+```
+
+**`track` convenience methods:** `pageView` · `scroll50` · `scroll90` · `elementClick` · `activeMinute` · `formInteraction` · `resourceDownload` · `returnVisit` · `completionOrConversion` · `humanCorrection` · `agentHandoff` · `safetyEscalation` · `quizRetry` · `videoRewind`
+
+---
+
+### `useNodeSignal` — signal only
+
+Use when you're managing event capture separately and want to feed normalised events into the signal/burn pipeline.
+
+```typescript
+const { signal, display, push, reset, receipts } = useNodeSignal({
+  nodeId: 'node-anon-abc123',
+  signalWindowMinutes: 60,
+  nodeType: 'lesson',
+  thresholds: customThresholds,  // optional
+  onBurn: (receipt) => {         // optional
+    saveToAuditLog(receipt)
+  },
+})
+
+// Feed events in
+push(normalisedEvent)
+
+// Manually flush window
+reset()
+```
+
+**Behaviour:**
+- Updates `signal` optimistically on every `push` for responsive UI
+- Automatically flushes and burns the window on expiry (checks every 30 seconds)
+- Each flush generates a `RSPBurnReceipt` and calls `onBurn`
+
+---
+
+## Components
+
+All components are **unstyled by default** — they emit semantic class names you style yourself. Pass `className` or `style` for inline overrides.
+
+---
+
+### `SignalCard`
+
+Displays a single RSP node signal — state, intensity, trend, and suggested action.
+
+```tsx
+import { SignalCard } from '@rsp-protocol/react'
+
+<SignalCard
+  signal={signal}
+  showAction={true}      // show suggested action — default: true
+  showIntensity={true}   // show intensity bar — default: true
+  showTrend={true}       // show trend indicator — default: true
+  showNodeId={false}     // show node ID (debug only) — default: false
+  className="my-card"
+/>
+```
+
+Emits class names: `rsp-signal-card` · `rsp-neutral` / `rsp-positive` / `rsp-warning` / `rsp-critical` / `rsp-info`
+
+---
+
+### `SignalGrid`
+
+Renders a collection of `SignalCard`s in a responsive grid. Useful for instructor dashboards, operator panels, or multi-node monitoring views.
+
+```tsx
+import { SignalGrid } from '@rsp-protocol/react'
+
+<SignalGrid
+  signals={signals}           // RSPNodeSignal[]
+  showAction={true}
+  showIntensity={true}
+  className="my-grid"
+/>
+```
+
+---
+
+### `StateBadge`
+
+Compact inline badge for dense UIs — tables, lists, headers.
+
+```tsx
+import { StateBadge } from '@rsp-protocol/react'
+
+// Full label
+<StateBadge state="resonant" />
+// → renders: "Resonant"
+
+// Dot only — for tight spaces
+<StateBadge state="support_needed" variant="dot" />
+// → renders a coloured dot with aria-label
+
+// With custom class
+<StateBadge state="friction" className="my-badge" />
+```
+
+**Props:** `state: RSPVisualState` · `variant?: 'full' | 'dot'` · `className?` · `style?`
+
+---
+
+### `AttentionAlert`
+
+Surfaces signals requiring immediate attention. Renders nothing if no attention signals are present — safe to include unconditionally.
+
+Attention states: `support_needed` · `friction` · `overload` · `drop_off` · `coordination_degraded`
+
+```tsx
+import { AttentionAlert } from '@rsp-protocol/react'
+
+<AttentionAlert
+  signals={allSignals}                         // RSPNodeSignal[]
+  title="Nodes requiring attention"            // optional, default: 'Attention required'
+  onDismiss={(nodeId) => dismiss(nodeId)}      // optional
+  className="my-alert"
+/>
+```
+
+Accessible by default — uses `role="alert"` and `aria-live="polite"`.
+
+---
+
+## CSS Class Reference
+
+Style these classes to theme the components:
+
+```css
+/* Signal card */
+.rsp-signal-card { }
+.rsp-signal-card__header { }
+.rsp-signal-card__state { }
+.rsp-signal-card__trend { }
+.rsp-signal-card__intensity { }
+.rsp-signal-card__intensity-bar { }
+.rsp-signal-card__description { }
+.rsp-signal-card__action { }
+.rsp-signal-card__window { }
+
+/* State badge */
+.rsp-state-badge { }
+.rsp-state-badge--dot { }
+
+/* Attention alert */
+.rsp-attention-alert { }
+.rsp-attention-alert__header { }
+.rsp-attention-alert__title { }
+.rsp-attention-alert__count { }
+.rsp-attention-alert__list { }
+.rsp-attention-alert__item { }
+.rsp-attention-alert__state { }
+.rsp-attention-alert__action { }
+.rsp-attention-alert__dismiss { }
+
+/* Colour modifiers — applied to cards and badges */
+.rsp-neutral  { }
+.rsp-positive { }
+.rsp-warning  { }
+.rsp-critical { }
+.rsp-info     { }
+```
+
+---
+
+## Operator Dashboard Example
+
+```tsx
+import { useRSPPipeline, SignalGrid, AttentionAlert } from '@rsp-protocol/react'
+import { createConsent } from '@rsp-protocol/core'
+
+function Dashboard({ nodes }) {
+  const pipelines = nodes.map((node) =>
+    useRSPPipeline({
+      nodeId: node.id,
+      consent: node.consent,
+      nodeType: 'student',
+      signalWindowMinutes: 60,
+      onBurn: (receipt) => saveReceipt(receipt),
+    })
+  )
+
+  const signals = pipelines
+    .map((p) => p.signal)
+    .filter(Boolean)
+
+  return (
+    <div>
+      <AttentionAlert
+        signals={signals}
+        title="Students needing support"
+        onDismiss={(nodeId) => console.log('dismissed', nodeId)}
+      />
+      <SignalGrid signals={signals} />
+    </div>
+  )
+}
+```
+
+---
+
+## The Burn Clause
 
 When user behaviour is translated, synchronised, aggregated, or converted into a protocol signal, any identifiable source information must be removed, destroyed, cryptographically erased, or irreversibly decoupled as soon as it is no longer necessary — unless retention is required by law, explicit consent, safety, or legitimate accountability.
 
@@ -193,35 +334,12 @@ When user behaviour is translated, synchronised, aggregated, or converted into a
 
 ---
 
-## Visual States
+## Links
 
-RSP reduces all behaviour to 13 named visual states — intentionally low-resolution. Downstream systems act on a state, not a score.
-
-| State | Colour | Meaning |
-|---|---|---|
-| `dormant` | neutral | No signal activity in the current window |
-| `aware` | neutral | Low-level signal — present but not engaged |
-| `active` | positive | Engaged and interacting |
-| `resonant` | positive | Strong, consistent engagement |
-| `friction` | warning | Repeated struggle detected |
-| `overload` | warning | Signal intensity above threshold |
-| `drop_off` | warning | Engagement started but not sustained |
-| `support_needed` | critical | Safety escalation or distress signal |
-| `cooling` | info | Signal declining after a peak |
-| `converting` | positive | Completion or conversion event detected |
-| `mastery` | positive | Sustained high-quality engagement |
-| `coordination_degraded` | critical | Multi-node coordination breaking down |
-| `coordination_healthy` | positive | Multi-node coordination operating well |
-
----
-
-## Monorepo — Getting Started
-
-```bash
-pnpm install
-pnpm build
-pnpm test
-```
+- [Protocol page](https://lovekeylink.com/rsp)
+- [GitHub](https://github.com/rsp)
+- [Core package — `@rsp-protocol/core`](https://www.npmjs.com/package/@rsp-protocol/core)
+- Genesis NFT: `0xA1755730C6F66dbe3de29e24F4Db9F448ef3FDD5` (Ethereum)
 
 ---
 
